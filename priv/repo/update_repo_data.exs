@@ -16,6 +16,7 @@ defmodule Adoptoposs.UpdateReposityData do
   because e.g. GitHub allows only batches of maximum 100 ids.
   """
   def run(provider: provider, token: token) do
+    IO.puts "running for provider: #{provider}"
     Repo
     |> stream(from(p in Project, select: [p.id, p.repo_id], order_by: p.updated_at))
     |> Enum.each(& run_batch(&1, provider: provider, token: token))
@@ -25,7 +26,11 @@ defmodule Adoptoposs.UpdateReposityData do
     project_ids = project_data |> Enum.map(&List.first(&1))
     repo_ids = project_data |> Enum.map(&List.last(&1))
 
+    IO.inspect(project_ids)
+    IO.inspect(repo_ids)
+
     with {:ok, repositories} <- Network.repos(token, provider, repo_ids) do
+      IO.inspect(repositories)
       project_ids
       |> Enum.with_index()
       |> Enum.map(fn {id, index} -> update_data(id, repositories |> Enum.at(index)) end)
@@ -37,8 +42,10 @@ defmodule Adoptoposs.UpdateReposityData do
 
   defp update_data(project_id, %Network.Repository{} = repository) do
     project = Submissions.get_project!(project_id)
+    IO.puts("#{project.repo_id} == #{repository.id}: #{project.repo_id == repository.id}")
 
     if project.repo_id == repository.id do
+      IO.puts "actually updating project #{project.id}"
       %{id: language_id} = Tags.get_tag_by_name!(repository.language.name)
       Submissions.update_project_data(project, repository, %{language_id: language_id})
 
@@ -71,5 +78,7 @@ end
 #
 #    $ mix update.github_repos --token <api-token>
 #
+IO.puts("starting project update...")
 {[provider: provider, token: token], [], []} = OptionParser.parse(System.argv(), strict: [provider: :string, token: :string])
 Adoptoposs.UpdateReposityData.run(provider: provider, token: token)
+IO.puts("done")
