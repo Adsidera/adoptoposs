@@ -65,11 +65,11 @@ end
 # Takes provider and API token as command line arguments,
 # so that it can be run as:
 #
-#    $ mix run run priv/repo/update_repo_data.exs github <api-token>
+#    $ mix run priv/repo/update_repo_data.exs --provider github --token <api-token>
 #
 # or with the mix alias:
 #
-#    $ mix update.github_repos <api-token>
+#    $ mix update.github_repos --token <api-token>
 #
 {[provider: provider, token: token], [], []} = OptionParser.parse(System.argv(), strict: [provider: :string, token: :string])
 Adoptoposs.UpdateReposityData.run(provider: provider, token: token)
